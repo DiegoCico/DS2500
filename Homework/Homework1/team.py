@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 
-
 class Team:
 
     def __init__(self, name, x=0, y=0, color="purple"):
