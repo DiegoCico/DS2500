@@ -42,6 +42,6 @@ class Food:
     def __str__(self):
         """
         String representation of the Food object.
-        :return: A string with the name, hours, category, and features.
+        :return: A string with the name, hours, category, features, price, wait, proximity, and rating.
         """
-        return f'{self.name} ({self.hours}, {self.category}, Features: {self.features})'
+        return f'{self.name} ({self.hours}, {self.category}, Features: {self.features}, rating: {self.rating}, price: {self.price}, wait: {self.wait}, proximity: {self.proximity})'
