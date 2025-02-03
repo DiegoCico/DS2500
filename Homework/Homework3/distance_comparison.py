@@ -1,85 +1,113 @@
-import math
 import csv
 import matplotlib.pyplot as plt
-
-def euclidean_distance(point1, point2):
-    return math.sqrt(sum((x - y) ** 2 for x, y in zip(point1, point2)))
-
-def manhattan_distance(point1, point2):
-    return sum(abs(x - y) for x, y in zip(point1, point2))
-
-def jaccard_index(set1, set2):
-    intersection = len(set1 & set2)
-    union = len(set1 | set2)
-    return intersection / union if union != 0 else 0
-
-def hamming_distance(seq1, seq2):
-    return sum(c1 != c2 for c1, c2 in zip(seq1, seq2))
+from distances import euclidean, manhattan, hamming, jaccard
 
 def load_numeric_data(filename):
+    """
+    Load numeric data from a CSV file.
+
+    Args:
+        filename (str): Path to the CSV file.
+
+    Returns:
+        dict: A dictionary mapping identifiers (str) to lists of floats.
+    """
+    data = {}
     with open(filename, "r") as file:
         reader = csv.reader(file)
-        headers = next(reader)  # Skip header row
-        data = {row[0]: list(map(float, row[1:])) for row in reader}
+        next(reader)
+        for row in reader:
+            data[row[0]] = list(map(float, row[1:]))
     return data
 
 def load_binary_data(filename):
+    """
+    Load binary data from a CSV file.
+
+    Args:
+        filename (str): Path to the CSV file.
+
+    Returns:
+        dict: A dictionary mapping identifiers (str) to lists of integers.
+    """
+    data = {}
     with open(filename, "r") as file:
         reader = csv.reader(file)
-        headers = next(reader)  # Skip header row
-        data = {row[0]: set(row[1:]) for row in reader}
+        next(reader)
+        for row in reader:
+            data[row[0]] = list(map(int, row[1:]))
     return data
 
 def compute_pairwise_distances(data, distance_fn):
+    """
+    Compute pairwise distances for all unique pairs in the dataset.
+
+    Args:
+        data (dict): Dictionary mapping identifiers to data points.
+        distance_fn (callable): Function to compute distance between two data points.
+
+    Returns:
+        list: A list of distances computed for each unique pair.
+    """
     keys = list(data.keys())
     distances = []
     for i in range(len(keys)):
-        for j in range(i + 1, len(keys)):  # Avoid duplicates
-            dist = distance_fn(data[keys[i]], data[keys[j]])
-            distances.append(dist)
+        for j in range(i + 1, len(keys)):
+            distances.append(distance_fn(data[keys[i]], data[keys[j]]))
     return distances
 
 def main():
+    """
+    Load datasets, compute distances, print the computed means, and generate scatter plots.
+    """
     numeric_data = load_numeric_data("numeric.csv")
     binary_data = load_binary_data("binary.csv")
 
-    # Part 1: Compute distances
-    alpha_distances_euclidean = [euclidean_distance(numeric_data["Alpha"], numeric_data[key])
-                                  for key in numeric_data if key != "Alpha"]
-    alpha_distances_manhattan = [manhattan_distance(numeric_data["Alpha"], numeric_data[key])
-                                  for key in numeric_data if key != "Alpha"]
-    
-    jaccard_distances = compute_pairwise_distances(binary_data, jaccard_index)
-    hamming_distances = compute_pairwise_distances(binary_data, hamming_distance)
+    row1 = input("Enter first row name: ").strip()
+    row2 = input("Enter second row name: ").strip()
+    if row1 not in numeric_data or row2 not in numeric_data:
+        print("One or both row names not found in numeric data.")
+    else:
+        specific_distance = euclidean(numeric_data[row1], numeric_data[row2])
+        print(f"Euclidean distance between {row1} and {row2}: {specific_distance:.4f}")
 
-    # Compute means
-    mean_euclidean = sum(alpha_distances_euclidean) / len(alpha_distances_euclidean)
-    mean_manhattan = sum(alpha_distances_manhattan) / len(alpha_distances_manhattan)
-    mean_jaccard = sum(jaccard_distances) / len(jaccard_distances)
-    mean_hamming = sum(hamming_distances) / len(hamming_distances)
+    if "Alpha" not in numeric_data:
+        print("Alpha row not found in numeric data.")
+    else:
+        alpha = numeric_data["Alpha"]
+        euclidean_vals = []
+        manhattan_vals = []
+        for key, values in numeric_data.items():
+            if key != "Alpha":
+                euclidean_vals.append(euclidean(alpha, values))
+                manhattan_vals.append(manhattan(alpha, values))
+        mean_euclidean = sum(euclidean_vals) / len(euclidean_vals)
+        mean_manhattan = sum(manhattan_vals) / len(manhattan_vals)
+        print(f"Mean Euclidean Distance from Alpha: {mean_euclidean:.4f}")
+        print(f"Mean Manhattan Distance from Alpha: {mean_manhattan:.4f}")
 
-    # Print results
-    print(f"Mean Euclidean Distance from Alpha: {mean_euclidean:.4f}")
-    print(f"Mean Manhattan Distance from Alpha: {mean_manhattan:.4f}")
+        plt.figure(figsize=(10, 5))
+        plt.scatter(euclidean_vals, manhattan_vals)
+        plt.xlabel("Euclidean Distance from Alpha")
+        plt.ylabel("Manhattan Distance from Alpha")
+        plt.title("Euclidean vs. Manhattan Distance from Alpha")
+        plt.grid(True)
+        plt.savefig("plot1.png")
+        plt.show()
+
+    jaccard_vals = compute_pairwise_distances(binary_data, jaccard)
+    hamming_vals = compute_pairwise_distances(binary_data, hamming)
+    mean_jaccard = sum(jaccard_vals) / len(jaccard_vals)
+    mean_hamming = sum(hamming_vals) / len(hamming_vals)
     print(f"Mean Jaccard Index: {mean_jaccard:.4f}")
     print(f"Mean Hamming Distance: {mean_hamming:.4f}")
 
-    # Part 2: Visualization
     plt.figure(figsize=(10, 5))
-    plt.scatter(alpha_distances_euclidean, alpha_distances_manhattan)
-    plt.xlabel("Euclidean Distance from Alpha")
-    plt.ylabel("Manhattan Distance from Alpha")
-    plt.title("Euclidean vs. Manhattan Distance")
-    plt.grid()
-    plt.savefig("plot1.png")
-    plt.show()
-
-    plt.figure(figsize=(10, 5))
-    plt.scatter(jaccard_distances, hamming_distances)
+    plt.scatter(jaccard_vals, hamming_vals)
     plt.xlabel("Jaccard Index")
     plt.ylabel("Hamming Distance")
     plt.title("Jaccard vs. Hamming Distance")
-    plt.grid()
+    plt.grid(True)
     plt.savefig("plot2.png")
     plt.show()
 

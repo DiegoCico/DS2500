@@ -1,19 +1,37 @@
+import math
+import pytest
+from distances import euclidean, manhattan, hamming, jaccard
+
 def test_euclidean():
-    assert euclidean_distance([0, 0], [3, 4]) == 5.0
-    assert euclidean_distance([1, 2, 3], [4, 5, 6]) == math.sqrt(27)
-    assert euclidean_distance([5, 5], [5, 5]) == 0.0
+    """
+    Test the euclidean function with multiple cases.
+    """
+    assert math.isclose(euclidean([0, 0], [0, 0]), 0.0, rel_tol=1e-6)
+    assert math.isclose(euclidean([0, 0], [3, 4]), 5.0, rel_tol=1e-6)
+    expected = math.sqrt(27)
+    assert math.isclose(euclidean([1, 2, 3], [4, 5, 6]), expected, rel_tol=1e-6)
 
 def test_manhattan():
-    assert manhattan_distance([0, 0], [3, 4]) == 7
-    assert manhattan_distance([1, 2, 3], [4, 5, 6]) == 9
-    assert manhattan_distance([5, 5], [5, 5]) == 0
-
-def test_jaccard():
-    assert jaccard_index(set([1, 2, 3]), set([2, 3, 4])) == 2/4
-    assert jaccard_index(set([1, 2]), set([1, 2, 3, 4])) == 2/4
-    assert jaccard_index(set([1, 2]), set([3, 4])) == 0.0
+    """
+    Test the manhattan function with multiple cases.
+    """
+    assert manhattan([0, 0], [0, 0]) == 0
+    assert manhattan([0, 0], [3, 4]) == 7
+    assert manhattan([1, 2, 3], [4, 5, 6]) == 9
 
 def test_hamming():
-    assert hamming_distance("1010", "1001") == 2
-    assert hamming_distance("1100", "1100") == 0
-    assert hamming_distance("1111", "0000") == 4
+    """
+    Test the hamming function with multiple cases.
+    """
+    assert hamming([1, 0, 1], [1, 0, 1]) == 0
+    assert hamming([1, 0, 1], [1, 1, 1]) == 1
+    assert hamming([0, 0, 0], [1, 1, 1]) == 3
+
+def test_jaccard():
+    """
+    Test the jaccard function with multiple cases.
+    """
+    assert math.isclose(jaccard([1, 0, 1, 0], [1, 0, 1, 0]), 1.0, rel_tol=1e-6)
+    assert math.isclose(jaccard([1, 0, 1, 0], [0, 1, 0, 1]), 0.0, rel_tol=1e-6)
+    expected = 1/3
+    assert math.isclose(jaccard([1, 1, 0, 0], [1, 0, 1, 0]), expected, rel_tol=1e-6)
