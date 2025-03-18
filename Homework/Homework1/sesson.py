@@ -2,7 +2,6 @@ import csv
 from Homework.Homework1.team import Team
 import matplotlib.pyplot as plt
 
-
 path = "./goals.csv"
 all_teams = []
 
