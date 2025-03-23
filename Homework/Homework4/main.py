@@ -5,10 +5,12 @@ from math import radians, sin, cos, sqrt, atan2
 import matplotlib.patches as mpatches
 
 EARTH_RADIUS = 6371
+stations_file = 'stations.csv'
+temp_file = 'temp.csv'
 
 def haversine_distance(lat1, lon1, lat2, lon2):
     """
-    Compute the haversine distance between two geographic points.
+    Do the math for haversine distance between two geographic points.
 
     Parameters:
       lat1 (float): Latitude of the first point in degrees.
@@ -66,9 +68,7 @@ def clean_stations_data(stations_df):
       DataFrame: Cleaned station data.
     """
     cleaned_df = stations_df.dropna()
-    cleaned_df = cleaned_df[
-        (cleaned_df['lat'] != 0) & (cleaned_df['lon'] != 0)
-        ]
+    cleaned_df = cleaned_df[(cleaned_df['lat'] != 0) & (cleaned_df['lon'] != 0)]
     return cleaned_df
 
 def filter_stations_near(stations_df, center_lat, center_lon, max_distance=100):
@@ -86,9 +86,7 @@ def filter_stations_near(stations_df, center_lat, center_lon, max_distance=100):
     """
     distances = []
     for _, row in stations_df.iterrows():
-        distance = haversine_distance(
-            center_lat, center_lon, row['lat'], row['lon']
-        )
+        distance = haversine_distance(center_lat, center_lon, row['lat'], row['lon'])
         distances.append(distance)
     stations_df = stations_df.copy()
     stations_df['d'] = distances
@@ -134,7 +132,13 @@ def plot_mean_temperature(temp_df, stations_near_df, month):
       stations_near_df (DataFrame): Data for stations near the center.
       month (int): Month for which to plot the data.
     """
-    temp_near_df = pd.merge(temp_df, stations_near_df[['id']], on='id')
+    print(temp_df.head())
+    print("-------")
+    print(stations_near_df.head())
+    print("-----")
+    temp_near_df = pd.merge(temp_df, stations_near_df[['id']])
+    print("temp df")
+    print(temp_near_df.head())
     temp_near_month_df = temp_near_df[temp_near_df['mon'] == month]
     mean_daily_temp = temp_near_month_df.groupby('day')['temp'].mean()
 
@@ -143,7 +147,6 @@ def plot_mean_temperature(temp_df, stations_near_df, month):
     plt.title('Mean Temperature')
     plt.xlabel('Day')
     plt.ylabel('Temperature')
-    plt.grid(False)
     plt.savefig('plot1.png')
     plt.show()
 
@@ -186,27 +189,22 @@ def plot_us_temperature_map(temp_df, stations_df, month, day):
     min_lon, max_lon = -125.0, -65.0
     rows, cols = 100, 150
     us_map = np.zeros((rows, cols, 3))
-
     temp_day_df = temp_df[(temp_df['mon'] == month) & (temp_df['day'] == day)]
-    temp_day_df = pd.merge(temp_day_df, stations_df[['id', 'lat', 'lon']], on='id')
-
+    temp_day_df = pd.merge(temp_day_df, stations_df[['id', 'lat', 'lon']])
     for _, row in temp_day_df.iterrows():
         lat = row['lat']
         lon = row['lon']
         temperature = row['temp']
-
         if lat < min_lat or lat > max_lat or lon < min_lon or lon > max_lon:
             continue
         row_idx = int((max_lat - lat) / (max_lat - min_lat) * (rows - 1))
         col_idx = int((lon - min_lon) / (max_lon - min_lon) * (cols - 1))
         if 0 <= row_idx < rows and 0 <= col_idx < cols:
             us_map[row_idx, col_idx] = temp_to_color(temperature)
-
     plt.figure(figsize=(12, 8))
     plt.imshow(us_map)
-    plt.title('All the temperatures in the US on January 28th, 1986')
+    plt.title('Temperatures in the US on January 28 1986')
     plt.subplots_adjust(right=0.75)
-
     legend_patches = [
         mpatches.Patch(color=(1, 0, 0), label='> 90°F'),
         mpatches.Patch(color=(1, 128/255, 0), label='81°F - 90°F'),
@@ -214,10 +212,7 @@ def plot_us_temperature_map(temp_df, stations_df, month, day):
         mpatches.Patch(color=(128/255, 1, 128/255), label='61°F - 70°F'),
         mpatches.Patch(color=(0, 1, 0), label='51°F - 60°F'),
         mpatches.Patch(color=(0, 128/255, 1), label='41°F - 50°F'),
-        mpatches.Patch(color=(128/255, 0, 128/255), label='≤ 40°F')
-    ]
-
-    # Place the legend outside the plot area
+        mpatches.Patch(color=(128/255, 0, 128/255), label='≤ 40°F')]
     plt.legend(handles=legend_patches, loc='center left', bbox_to_anchor=(1, 0.5), title='Temperature Ranges')
     plt.savefig('plot2.png', bbox_inches='tight')
     plt.show()
@@ -226,41 +221,23 @@ def main():
     """
     Main function to execute the analysis and visualizations.
     """
-    # File names for the CSV data
-    stations_file = 'stations.csv'
-    temp_file = 'temp.csv'
-
-    # Read data from CSV files
     stations_df, temp_df = read_data(stations_file, temp_file)
-
-    # Print shape before cleaning
     print(f"Shape before cleaning: {stations_df.shape}")
-
-    # Clean station data
     stations_clean_df = clean_stations_data(stations_df)
     print("Stations data after cleaning:")
     print(stations_clean_df)
     print(f"Shape after cleaning: {stations_clean_df.shape}")
-
-    # Find stations near Cape Canaveral
     cape_lat = 28.396837
     cape_lon = -80.605659
     stations_near_df = filter_stations_near(stations_clean_df, cape_lat, cape_lon)
     print(f"Stations within 100 km: {len(stations_near_df)}")
-
-    # Compute temperature statistics for January
     station_id = 722040
     jan = 1
     min_temp = get_min_temp_at_station(temp_df, station_id, jan)
     print(f"Min temperature at station {station_id}: {min_temp}")
-
     mean_temp_jan28 = get_mean_temp_on_day(temp_df, jan, 28)
     print(f"Mean temperature on Jan 28: {mean_temp_jan28}")
-
-    # Plot mean daily temperature for stations near Cape Canaveral in January
     plot_mean_temperature(temp_df, stations_near_df, jan)
-
-    # Plot US temperature map for January 28 with the color legend outside the graph
     plot_us_temperature_map(temp_df, stations_clean_df, jan, 28)
 
 if __name__ == '__main__':
